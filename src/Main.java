@@ -12,18 +12,16 @@ public class Main extends JPanel {
 
     void play(){
         frame = new JFrame();
-        frame.setSize(500, 500);
+        frame.setSize(500, 300);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JPanel panel = new JPanel();
         panel.setSize(200, 200);
 
-
         ScreenDrawBlock draw = new ScreenDrawBlock();
-        frame.add(draw, BorderLayout.CENTER);
+        frame.getContentPane().add(draw);
         frame.addKeyListener(draw);
 
-        //frame.repaint();
 
         frame.setVisible(true);
     }
