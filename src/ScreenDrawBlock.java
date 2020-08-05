@@ -1,75 +1,129 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.util.ArrayList;
-
 public class ScreenDrawBlock extends JPanel implements KeyListener {
 
     private Shape running;
-   // private boolean[][] grid = new boolean[20][20];
-    Color[][] gridColor = new Color[20][20];
+    int ROW = 20;
+    int COL = 20;
+    Color[][] gridColor;
+    int sizeUnit;
 
+    Point location;
 
-    public ScreenDrawBlock(){
+    public ScreenDrawBlock(Point location_, int row_, int col_, int size_){
+        ROW = row_;
+        COL = col_;
+        sizeUnit = size_;
+        location = location_;
+
+        gridColor = new Color[ROW][COL];
         fillGridColor();
-        this.setSize(20, 20);
-
-        Runnable runnable = new myRun();
-        Thread thread = new Thread(runnable);
-        thread.start();
     }
 
-    public class myRun implements Runnable{
+    public void play(){
+        /*Runnable runnable = new myRun();
+        Thread thread = new Thread(runnable);
+        thread.start();*/
 
+        running = createRandomShape();
+        addKeyListener(running);
+        Timer timer = new Timer(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                if(!isStop(running)) {
+                    running.moveDown();
+                    repaint();
+                }
+                else{
+                    // tắt điều khiển với running và đưa các khói của nó vào gridColor
+                    removeKeyListener(running);
+                    Point[] all_point = running.getAll();
+                    for (int i = 0; i < all_point.length; ++i) {
+                        int row = all_point[i].y;
+                        int collunm = all_point[i].x;
+
+                        if (row < 0) continue;
+                        gridColor[row][collunm] = running.color;
+                    }
+
+                    // xóa những hàng full
+                    int row = gridColor.length;
+                    for (int i = row - 1; i >= 0; )
+                        if (isFullLine(i))
+                            deleteLine(gridColor, i);
+                        else --i;
+
+                    if(!isFullGrid()) {
+                        running = createRandomShape();
+                        addKeyListener(running);
+                    }else{
+                        gameOver("GAME OVER", 50);
+                        ((Timer)e.getSource()).stop();
+                    }
+                }
+            }
+        });
+        timer.start();
+    }
+
+    /*public class myRun implements Runnable{
         @Override
         public void run() {
-            while(!isFullGrid()){
-                revalidate();
+            while (!isFullGrid()) {
                 running = createRandomShape();
                 addKeyListener(running);
 
-                while(!isStop(running)) {
-                    running.moveDown();
+                while (!isStop(running)) {
 
-                    try{
-                        Thread.sleep(500);
+                    running.moveDown();
+                    try {
+                        Thread.sleep(400);
                         repaint();
-                    }catch (Exception ex){}
+                    } catch (Exception ex) {
+                    }
                 }
 
+                // tắt điều khiển với running và đưa các khói của nó vào gridColor
                 removeKeyListener(running);
                 Point[] all_point = running.getAll();
-                for(int i=0; i< all_point.length; ++i){
+                for (int i = 0; i < all_point.length; ++i) {
                     int row = all_point[i].y;
                     int collunm = all_point[i].x;
 
+                    if (row < 0) continue;
                     gridColor[row][collunm] = running.color;
                 }
 
+                // xóa những hàng full
                 int row = gridColor.length;
-                for(int i=row-1; i>=0;)
-                    if(isFullLine(i))
+                for (int i = row - 1; i >= 0; )
+                    if (isFullLine(i))
                         deleteLine(gridColor, i);
                     else --i;
             }
+
+            gameOver("GAME OVER", 50);
         }
-    }
+
+    }*/
 
     void fillGridColor(){
-        int row = gridColor.length;
-        int collunm = gridColor[0].length;
 
-        for(int i=0; i<row; ++i)
-            for(int j=0; j<collunm; ++j)
+        for(int i=0; i<ROW; ++i)
+            for(int j=0; j<COL; ++j)
                 gridColor[i][j] = Color.WHITE;
     }
 
     Shape createRandomShape(){
-        Point def = new Point(10, 0);
+        Point def = new Point(COL/2, -1);
         switch ((int)(Math.random()*4)){
             case 0: return new BlockL(def);
-            //case 1: return new BlockI(def);
+            case 1: return new BlockI(def);
             case 2: return new BlockO(def);
             case 3: return new BlockT(def);
             case 4: return new BlockZ(def);
@@ -87,10 +141,8 @@ public class ScreenDrawBlock extends JPanel implements KeyListener {
         return false;
     }
     boolean isFullCollumn(int collum_index){
-        int row = gridColor.length;
-
         if(collum_index < gridColor[0].length){
-            for(int i =0; i<row; ++i)
+            for(int i =0; i<ROW; ++i)
                 if(gridColor[i][collum_index] == Color.WHITE)
                     return false;
             return true;
@@ -101,51 +153,42 @@ public class ScreenDrawBlock extends JPanel implements KeyListener {
         Point[] all_point = shape.getAll();
         for(int i=0; i< all_point.length; ++i){
             int colunm = all_point[i].x;
-            int row = all_point[i].y + 1;
+            int row = all_point[i].y;
 
-            if(gridColor[row][colunm] != Color.WHITE) return true;
-            if(row == gridColor.length - 1) return true;
+            if(row < 0) continue;
+            if(row == ROW - 1) return true;
+            if(gridColor[row + 1][colunm] != Color.WHITE) return true;
+
         }
         return false;
     }
 
-    boolean isTouchLelfEdge(Shape shape){
-        Point[] all_point = shape.getAll();
-
-        for(int i=0; i<all_point.length; ++i)
-            if(all_point[i].x == 0) return true;
-
-        return false;
-  }
-    boolean isTouchRigthEdge(Shape shape){
-        Point[] all_point = shape.getAll();
-
-        for(int i=0; i<all_point.length; ++i)
-            if(all_point[i].x == gridColor[0].length-1) return true;
-
-        return false;
-  }
-    boolean isTouchLelfShape(Shape shape){
+    boolean isOverEdge(Shape shape){
         Point[] all_point = shape.getAll();
         for(int i=0; i<all_point.length; ++i){
-            int x = all_point[i].x - 1;
+            int x = all_point[i].x;
+
+            if(x > COL -1) return true;
+            if(x < 0) return true;
+        }
+
+        return false;
+    }
+    boolean isCollapseShape(Shape shape){
+        Point[] all_point = shape.getAll();
+        for(int i=0; i<all_point.length; ++i){
+            int x = all_point[i].x;
             int y = all_point[i].y;
 
+            if(x < 0 || x > COL -1) continue;
+            if(y < 0 || y > ROW - 1) continue;
             if(gridColor[y][x] != Color.WHITE) return true;
         }
 
         return false;
     }
-    boolean isTouchRigthShape(Shape shape){
-        Point[] all_point = shape.getAll();
-        for(int i=0; i<all_point.length; ++i){
-            int x = all_point[i].x + 1;
-            int y = all_point[i].y;
-
-            if(gridColor[y][x] != Color.WHITE) return true;
-        }
-
-        return false;
+    boolean isFailed(Shape shape){
+        return (isOverEdge(shape) || isCollapseShape(shape));
     }
 
     boolean isFullLine(int line_index){
@@ -167,22 +210,35 @@ public class ScreenDrawBlock extends JPanel implements KeyListener {
                 gridColor[0][j] = Color.WHITE;
     }
 
+    void gameOver(String str, int fontSize){
+
+        JLabel label = new JLabel(str);
+
+        int width = (int)(label.getText().length() * fontSize *0.75); // tỉ lệ giữa size và width: 0.
+        int heigth = fontSize;
+        label.setSize(width, heigth);
+
+        int x = (COL*sizeUnit - width)/2 + location.x;
+        int y = (ROW*sizeUnit - heigth)/2 + location.y;
+        label.setLocation(x, y);
+        label.setFont(new Font("Consolas", Font.BOLD, fontSize ));
+        this.add(label);
+
+        repaint();
+    }
+
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        g.drawRect(0, 0, 200, 200);
-
         if(gridColor != null){
-            int row = gridColor.length;
-            int collunm = gridColor[0].length;
 
-            for(int i=0; i<row; ++i)
-                for(int j=0; j<collunm; ++j) {
+            for(int i=0; i<ROW; ++i)
+                for(int j=0; j<COL; ++j) {
 
                     g.setColor(Color.lightGray);
-                    g.drawRect(i*10, j*10, 10, 10);
+                    g.drawRect(location.x + j*sizeUnit, location.y + i*sizeUnit, sizeUnit, sizeUnit);
 
                     if (gridColor[i][j] != Color.WHITE)
                         veMotKhoiVuong(g, new Point(j, i), gridColor[i][j]);
@@ -194,10 +250,15 @@ public class ScreenDrawBlock extends JPanel implements KeyListener {
 
     }
     protected void veMotKhoiVuong (Graphics graphics, Point newPoint, Color color){
+        if(newPoint.x <0 || newPoint.x > COL - 1)
+            return;
+        if(newPoint.y<0 || newPoint.y > ROW-1)
+            return;
+
         graphics.setColor(color);
-        graphics.fillRect(newPoint.x*10, newPoint.y*10, 10, 10);
+        graphics.fillRect(location.x + newPoint.x*sizeUnit, location.y + newPoint.y*sizeUnit, sizeUnit, sizeUnit);
         graphics.setColor(Color.BLACK);
-        graphics.drawRect(newPoint.x*10, newPoint.y*10, 10, 10);
+        graphics.drawRect(location.x + newPoint.x*sizeUnit, location.y + newPoint.y*sizeUnit, sizeUnit, sizeUnit);
     }
     void drawShape(Graphics graphics, Shape shape){
         if(shape != null){
@@ -215,26 +276,32 @@ public class ScreenDrawBlock extends JPanel implements KeyListener {
     public void keyPressed(KeyEvent e) {
         switch (e.getKeyCode()){
             case KeyEvent.VK_LEFT:
-                if(isTouchLelfEdge(running) || isTouchLelfShape(running))
-                    break;
-
-                running.keyPressed(e);
+                running.moveLelf();
+                if(isFailed(running))
+                    running.moveRight();
                 break;
 
             case KeyEvent.VK_RIGHT:
-                if(isTouchRigthEdge(running) || isTouchRigthShape(running))
-                    break;
+                running.moveRight();
+                if(isFailed(running))
+                    running.moveLelf();
+                break;
 
-                running.keyPressed(e);
+            case KeyEvent.VK_UP:
+                running.turnRight();
+                if(isFailed(running))
+                    running.turnLelf();
+                break;
+
+            case KeyEvent.VK_DOWN:
+                running.turnLelf();
+                if(isFailed(running))
+                    running.turnRight();
                 break;
 
             case KeyEvent.VK_SPACE:
-                if(isStop(running))
-                    break;
-
-                running.moveDown();
-            default:
-                running.keyPressed(e);
+                if(!isStop(running))
+                    running.moveDown();
                 break;
         }
 

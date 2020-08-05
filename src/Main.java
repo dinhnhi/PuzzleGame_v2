@@ -4,26 +4,23 @@ import java.awt.*;
 
 public class Main extends JPanel {
     private JFrame frame;
-
     public static void main(String args[]){
         Main main = new Main();
         main.play();
+        System.out.println("Hello");
     }
 
     void play(){
         frame = new JFrame();
-        frame.setSize(500, 300);
+        frame.setSize(800, 800);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JPanel panel = new JPanel();
-        panel.setSize(200, 200);
-
-        ScreenDrawBlock draw = new ScreenDrawBlock();
-        frame.getContentPane().add(draw);
+        ScreenDrawBlock draw = new ScreenDrawBlock(new Point(10, 10), 10, 20, 20);
         frame.addKeyListener(draw);
-
-
+        frame.add(draw);
         frame.setVisible(true);
+
+        draw.play();
     }
 
     protected void paintComponent(Graphics g) {

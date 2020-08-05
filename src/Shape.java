@@ -106,6 +106,13 @@ public abstract class Shape extends JPanel implements KeyListener {
         right.y += 1;
         main.y += 1;
     }
+    void moveUp(){
+        top.y -= 1;
+        below.y -= 1;
+        lelf.y -= 1;
+        right.y -= 1;
+        main.y -= 1;
+    }
 
 
     @Override
